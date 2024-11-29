@@ -2,6 +2,9 @@ package main
 
 import (
 	"documentStorage"
+	"documentStorage/pkg/handler"
+	"documentStorage/pkg/repository"
+	"documentStorage/pkg/service"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -18,8 +21,12 @@ func main() {
 		logrus.Fatalf("error loading env variables: %s", err.Error())
 	}
 
+	repos := repository.NewRepository()
+	services := service.NewService(repos)
+	handlers := handler.NewHandler(services)
+
 	srv := new(documentStorage.Server)
-	if err := srv.Run(viper.GetString("port")); err != nil {
+	if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
 		logrus.Fatalf("error occured while running http server: %s", err.Error())
 	}
 }
