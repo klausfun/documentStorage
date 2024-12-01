@@ -1,22 +1,10 @@
 package handler
 
 import (
+	"documentStorage/pkg"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
-
-type ErrorResponse struct {
-	Code int    `json:"code"`
-	Text string `json:"text"`
-}
-
-func (e *ErrorResponse) Error() string {
-	return e.Text
-}
-
-func NewErrorResponse(code int, text string) *ErrorResponse {
-	return &ErrorResponse{Code: code, Text: text}
-}
 
 type responseModel struct {
 	Response any `json:"response"`
@@ -32,6 +20,10 @@ type errorModel struct {
 
 func newErrResponse(c *gin.Context, statusCode int, message string) {
 	logrus.Error(message)
-	errResp := ErrorResponse{statusCode, message}
-	c.AbortWithStatusJSON(statusCode, errorModel{errResp})
+	c.AbortWithStatusJSON(statusCode, errorModel{
+		pkg.ErrorResponse{
+			Code: statusCode,
+			Text: message,
+		},
+	})
 }

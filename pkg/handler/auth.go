@@ -2,6 +2,9 @@ package handler
 
 import (
 	"documentStorage/models"
+	"documentStorage/pkg"
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
@@ -46,7 +49,8 @@ func (h *Handler) signUp(c *gin.Context) {
 
 	login, err := h.services.Authorization.CreateUser(input)
 	if err != nil {
-		if errResp, ok := err.(*ErrorResponse); ok {
+		var errResp *pkg.ErrorResponse
+		if errors.As(err, &errResp) {
 			newErrResponse(c, errResp.Code, errResp.Text)
 			return
 		}
@@ -77,6 +81,12 @@ func (h *Handler) signIn(c *gin.Context) {
 
 	token, err := h.services.Authorization.GenerateToken(input.Login, input.Password)
 	if err != nil {
+		var errResp *pkg.ErrorResponse
+		if errors.As(err, &errResp) {
+			newErrResponse(c, errResp.Code, errResp.Text)
+			return
+		}
+
 		newErrResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -89,5 +99,33 @@ func (h *Handler) signIn(c *gin.Context) {
 }
 
 func (h *Handler) signOut(c *gin.Context) {
+	token := c.Param("token")
 
+	if err := h.userIdentity(c, token); err != nil {
+		var errResp *pkg.ErrorResponse
+		if errors.As(err, &errResp) {
+			newErrResponse(c, errResp.Code, errResp.Text)
+			return
+		}
+
+		newErrResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err := h.services.Authorization.Logout(token); err != nil {
+		var errResp *pkg.ErrorResponse
+		if errors.As(err, &errResp) {
+			newErrResponse(c, errResp.Code, errResp.Text)
+			return
+		}
+
+		newErrResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, responseModel{
+		Response: map[string]interface{}{
+			fmt.Sprint(token): true,
+		},
+	})
 }

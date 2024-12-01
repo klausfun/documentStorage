@@ -31,10 +31,10 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		auth := api.Group("/auth")
 		{
 			auth.POST("/", h.signIn)
-			auth.DELETE("/:token", h.userIdentity, h.signOut)
+			auth.DELETE("/:token", h.signOut)
 		}
 
-		docs := api.Group("/docs", h.userIdentity)
+		docs := api.Group("/docs")
 		{
 			docs.POST("/", h.createDocument)
 			docs.GET("/", h.getAllDocuments)

@@ -35,7 +35,18 @@ func main() {
 		logrus.Fatalf("failed to initialize db: %s", err.Error())
 	}
 
-	repos := repository.NewRepository(db)
+	redisClient, err := repository.NewRedisClient(
+		repository.RedisConfig{
+			Addr:     viper.GetString("redis.hostAndPort"),
+			Password: os.Getenv("REDIS_PASSWORD"),
+			DB:       viper.GetInt("redis.dbname"),
+		},
+	)
+	if err != nil {
+		logrus.Fatalf("failed to initialize redis: %s", err.Error())
+	}
+
+	repos := repository.NewRepository(db, redisClient)
 	services := service.NewService(repos)
 	handlers := handler.NewHandler(services)
 

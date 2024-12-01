@@ -6,3 +6,7 @@ db:
   username: "postgres"
   dbname: "postgres"
   sslmode: "disable"
+
+redis:
+  hostAndPort: "localhost:6379"
+  dbname: 0

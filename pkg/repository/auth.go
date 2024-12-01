@@ -1,17 +1,21 @@
 package repository
 
 import (
+	"context"
 	"documentStorage/models"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
+	"time"
 )
 
 type AuthPostgres struct {
-	db *sqlx.DB
+	db          *sqlx.DB
+	redisClient *redis.Client
 }
 
-func NewAuthPostgres(db *sqlx.DB) *AuthPostgres {
-	return &AuthPostgres{db: db}
+func NewAuthPostgres(db *sqlx.DB, redisDB *redis.Client) *AuthPostgres {
+	return &AuthPostgres{db: db, redisClient: redisDB}
 }
 
 func (r *AuthPostgres) CreateUser(user models.User) (string, error) {
@@ -32,4 +36,12 @@ func (r *AuthPostgres) GetUser(login, password string) (models.User, error) {
 	err := r.db.Get(&user, query, login, password)
 
 	return user, err
+}
+
+func (r *AuthPostgres) CreateToken(token string) error {
+	return r.redisClient.Set(context.Background(), token, "blacklisted", 12*time.Hour).Err()
+}
+
+func (r *AuthPostgres) GetToken(token string) (string, error) {
+	return r.redisClient.Get(context.Background(), token).Result()
 }
