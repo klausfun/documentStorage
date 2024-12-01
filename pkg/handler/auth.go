@@ -3,8 +3,8 @@ package handler
 import (
 	"documentStorage/models"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 	"net/http"
+	"os"
 	"regexp"
 )
 
@@ -39,7 +39,7 @@ func (h *Handler) signUp(c *gin.Context) {
 		return
 	}
 
-	if input.Token != viper.GetString("token") {
+	if input.Token != os.Getenv("REGISTRATION_TOKEN") {
 		newErrResponse(c, http.StatusForbidden, "no access rights")
 		return
 	}
