@@ -1,8 +1,12 @@
 package service
 
-import "documentStorage/pkg/repository"
+import (
+	"documentStorage/models"
+	"documentStorage/pkg/repository"
+)
 
 type Authorization interface {
+	CreateUser(user models.User) (string, error)
 }
 
 type Document interface {
@@ -14,5 +18,7 @@ type Service struct {
 }
 
 func NewService(repos *repository.Repository) *Service {
-	return &Service{}
+	return &Service{
+		Authorization: NewAuthService(repos),
+	}
 }

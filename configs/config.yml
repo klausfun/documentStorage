@@ -1,5 +1,7 @@
 port: "8000"
 
+token: "nvs832jkvnsoi32jjvknirvjn"
+
 db:
   host: "localhost"
   port: "5436"

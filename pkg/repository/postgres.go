@@ -5,6 +5,14 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+const (
+	userTable          = "users"
+	metadataTable      = "metadata"
+	jsonDocumentTable  = "json_document"
+	filesTable         = "files"
+	usersMetadataTable = "users_metadata"
+)
+
 type Config struct {
 	Host     string
 	Port     string
