@@ -3,6 +3,7 @@ package handler
 import (
 	"documentStorage/pkg/service"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type Handler struct {
@@ -17,6 +18,11 @@ func NewHandler(services *service.Service) *Handler {
 
 func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.New()
+
+	router.NoRoute(func(c *gin.Context) {
+		newErrResponse(c, http.StatusNotImplemented, "Method is not implemented")
+		return
+	})
 
 	api := router.Group("/api")
 	{

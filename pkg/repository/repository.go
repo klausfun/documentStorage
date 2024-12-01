@@ -7,6 +7,7 @@ import (
 
 type Authorization interface {
 	CreateUser(user models.User) (string, error)
+	GetUser(login, password string) (models.User, error)
 }
 
 type Document interface {
