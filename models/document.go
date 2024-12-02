@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Document struct {
-	Id      int       `json:"-" db:"id"`
+	Id      int       `json:"-"`
 	Name    string    `json:"name" binding:"required"`
 	Mime    string    `json:"mime" binding:"required"`
 	Token   string    `json:"token" binding:"required"`

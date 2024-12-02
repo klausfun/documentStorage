@@ -1,5 +1,7 @@
 port: "8000"
 
+ttlDocSec: 168  # неделя в часах
+
 db:
   host: "localhost"
   port: "5436"

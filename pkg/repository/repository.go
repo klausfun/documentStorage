@@ -14,6 +14,7 @@ type Authorization interface {
 }
 
 type Document interface {
+	Create(userId int, meta models.Document, fileData []byte, jsonData string) error
 }
 
 type Repository struct {
@@ -24,5 +25,6 @@ type Repository struct {
 func NewRepository(db *sqlx.DB, redis *redis.Client) *Repository {
 	return &Repository{
 		Authorization: NewAuthPostgres(db, redis),
+		Document:      NewDocumentPostgres(db, redis),
 	}
 }

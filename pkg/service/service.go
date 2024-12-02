@@ -13,6 +13,7 @@ type Authorization interface {
 }
 
 type Document interface {
+	Create(userId int, meta models.Document, fileData []byte, jsonData string) error
 }
 
 type Service struct {
@@ -23,5 +24,6 @@ type Service struct {
 func NewService(repos *repository.Repository) *Service {
 	return &Service{
 		Authorization: NewAuthService(repos),
+		Document:      NewDocumentService(repos),
 	}
 }
