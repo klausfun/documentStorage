@@ -20,7 +20,7 @@ func NewDocumentPostgres(db *sqlx.DB, redisDB *redis.Client) *DocumentPostgres {
 	return &DocumentPostgres{db: db, redisClient: redisDB}
 }
 
-func (r *DocumentPostgres) Create(userId int, meta models.Document,
+func (r *DocumentPostgres) Create(meta models.GetDocsResp,
 	fileData []byte, jsonData string) error {
 
 	tx, err := r.db.Begin()
@@ -37,8 +37,6 @@ func (r *DocumentPostgres) Create(userId int, meta models.Document,
 	if err := row.Scan(&metadataID); err != nil {
 		return err
 	}
-
-	fmt.Println("fileData: ", fileData)
 
 	createFilesQuery := fmt.Sprintf("INSERT INTO %s (metadata_id, file_data)"+
 		"VALUES ($1, $2) RETURNING id", filesTable)
@@ -94,4 +92,47 @@ func (r *DocumentPostgres) Create(userId int, meta models.Document,
 	}
 
 	return tx.Commit()
+}
+
+func (r *DocumentPostgres) GetListOfDocs(userId int, docInput models.GetDocsInput) ([]models.GetDocsResp, error) {
+	var login string
+	if docInput.Login == nil {
+		getLoginQuery := fmt.Sprintf("SELECT login FROM %s WHERE id=$1", userTable)
+		err := r.db.Get(&login, getLoginQuery, userId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		login = *docInput.Login
+	}
+
+	var docs []models.GetDocsResp
+	metadataQuery := fmt.Sprintf("SELECT meta.id, meta.name, meta.file,"+
+		" meta.public, meta.mime, TO_CHAR(meta.created, 'YYYY-MM-DD HH24:MI:SS') AS created"+
+		" FROM %s meta "+
+		" INNER JOIN %s us_meta on meta.id = us_meta.metadata_id"+
+		" INNER JOIN %s us on us_meta.user_id = us.id"+
+		" WHERE us.login = $1 AND meta.%s = $2"+
+		" LIMIT $3", metadataTable, usersMetadataTable, userTable, docInput.Key)
+	err := r.db.Select(&docs, metadataQuery, login, docInput.Value, docInput.Limit)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, doc := range docs {
+		var grant []string
+		loginQuery := fmt.Sprintf("SELECT us.login "+
+			" FROM %s meta "+
+			" INNER JOIN %s us_meta on meta.id = us_meta.metadata_id"+
+			" INNER JOIN %s us on us_meta.user_id = us.id"+
+			" WHERE meta.id = $1", metadataTable, usersMetadataTable, userTable)
+		err = r.db.Select(&grant, loginQuery, doc.Id)
+		if err != nil {
+			return nil, err
+		}
+
+		docs[i].Grant = grant
+	}
+
+	return docs, err
 }

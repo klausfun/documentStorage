@@ -37,8 +37,10 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		docs := api.Group("/docs")
 		{
 			docs.POST("/", h.createDocument)
-			docs.GET("/", h.getAllDocuments)
+			docs.GET("/", h.getListOfDocs)
 			docs.GET("/:id", h.getDocumentById)
+			docs.HEAD("/", h.getListOfDocs)
+			docs.HEAD("/:id", h.getDocumentById)
 			docs.DELETE("/:id", h.deleteDocument)
 		}
 	}

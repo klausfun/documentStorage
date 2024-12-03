@@ -14,7 +14,8 @@ type Authorization interface {
 }
 
 type Document interface {
-	Create(userId int, meta models.Document, fileData []byte, jsonData string) error
+	Create(meta models.GetDocsResp, fileData []byte, jsonData string) error
+	GetListOfDocs(userId int, docInput models.GetDocsInput) ([]models.GetDocsResp, error)
 }
 
 type Repository struct {
