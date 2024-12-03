@@ -28,3 +28,10 @@ type GetDocsResp struct {
 	Created string   `json:"created"`
 	Grant   []string `json:"grant"`
 }
+
+type GetDoc struct {
+	File     []byte
+	MimeType string
+	JSON     string
+	IsFile   bool
+}

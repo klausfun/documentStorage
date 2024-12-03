@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 const maxSize = 2 * 1024 * 1024
@@ -43,6 +44,7 @@ func (h *Handler) createDocument(c *gin.Context) {
 	}
 
 	var fileData []byte
+	var jsonStr string
 	jsonData := make(map[string]interface{})
 
 	if meta.File {
@@ -63,10 +65,13 @@ func (h *Handler) createDocument(c *gin.Context) {
 			newErrResponse(c, http.StatusInternalServerError, "failed to read file")
 			return
 		}
-	}
+	} else {
+		jsonStr = c.Request.FormValue("json")
+		if jsonStr == "" {
+			newErrResponse(c, http.StatusBadRequest, "empty file and json")
+			return
+		}
 
-	jsonStr := c.Request.FormValue("json")
-	if jsonStr != "" {
 		if err := json.Unmarshal([]byte(jsonStr), &jsonData); err != nil {
 			newErrResponse(c, http.StatusBadRequest, "invalid json format")
 			return
@@ -127,7 +132,7 @@ func (h *Handler) getListOfDocs(c *gin.Context) {
 		return
 	}
 
-	docs, err := h.services.Document.GetListOfDocs(userId, input)
+	docs, err := h.services.Document.GetList(userId, input)
 	if err != nil {
 		var errResp *pkg.ErrorResponse
 		if errors.As(err, &errResp) {
@@ -156,8 +161,73 @@ func (h *Handler) getListOfDocs(c *gin.Context) {
 	})
 }
 
-func (h *Handler) getDocumentById(c *gin.Context) {
+type TokenInput struct {
+	Token string `json:"token" binding:"required"`
+}
 
+func (h *Handler) getDocumentById(c *gin.Context) {
+	var input TokenInput
+	if err := c.BindJSON(&input); err != nil {
+		newErrResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	token := input.Token
+	if err := h.userIdentity(c, token); err != nil {
+		var errResp *pkg.ErrorResponse
+		if errors.As(err, &errResp) {
+			newErrResponse(c, errResp.Code, errResp.Text)
+			return
+		}
+
+		newErrResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	docIdStr := c.Param("id")
+	docId, err := strconv.Atoi(docIdStr)
+	if err != nil {
+		newErrResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	doc, err := h.services.Document.GetById(docId)
+	if err != nil {
+		var errResp *pkg.ErrorResponse
+		if errors.As(err, &errResp) {
+			newErrResponse(c, errResp.Code, errResp.Text)
+			return
+		}
+
+		newErrResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if c.Request.Method == http.MethodHead {
+		if len(doc.JSON) == 0 && doc.File == nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		c.Status(http.StatusOK)
+		return
+	}
+
+	if doc.IsFile {
+		c.Data(http.StatusOK, doc.MimeType, doc.File)
+		return
+	}
+
+	var jsonData map[string]interface{}
+	err = json.Unmarshal([]byte(doc.JSON), &jsonData)
+	if err != nil {
+		newErrResponse(c, http.StatusInternalServerError, "error parsing JSON")
+		return
+	}
+
+	c.JSON(http.StatusOK, dataModel{
+		Data: jsonData,
+	})
 }
 
 func (h *Handler) deleteDocument(c *gin.Context) {

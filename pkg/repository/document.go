@@ -4,6 +4,7 @@ import (
 	"context"
 	"documentStorage/models"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
@@ -94,7 +95,7 @@ func (r *DocumentPostgres) Create(meta models.GetDocsResp,
 	return tx.Commit()
 }
 
-func (r *DocumentPostgres) GetListOfDocs(userId int, docInput models.GetDocsInput) ([]models.GetDocsResp, error) {
+func (r *DocumentPostgres) GetList(userId int, docInput models.GetDocsInput) ([]models.GetDocsResp, error) {
 	var login string
 	if docInput.Login == nil {
 		getLoginQuery := fmt.Sprintf("SELECT login FROM %s WHERE id=$1", userTable)
@@ -135,4 +136,66 @@ func (r *DocumentPostgres) GetListOfDocs(userId int, docInput models.GetDocsInpu
 	}
 
 	return docs, err
+}
+
+func (r *DocumentPostgres) GetById(docId int) (models.GetDoc, error) {
+	var res models.GetDoc
+	notFound := false
+
+	metaJSON, err := r.redisClient.HGet(context.Background(),
+		fmt.Sprintf("document:%d", docId), "json_data").Result()
+	if err != nil {
+		if !errors.Is(err, redis.Nil) {
+			return res, err
+		}
+
+		notFound = true
+	}
+
+	if !notFound && metaJSON != "" && metaJSON != "{}" {
+		res.IsFile = false
+		res.JSON = metaJSON
+
+		return res, nil
+	}
+
+	var jsonData string
+	getJsonQuery := fmt.Sprintf("SELECT json_data FROM %s WHERE metadata_id=$1", jsonDocumentTable)
+	err = r.db.Get(&jsonData, getJsonQuery, docId)
+	if err != nil {
+		return res, err
+	}
+
+	if jsonData != "{}" && jsonData != "" {
+		err = r.redisClient.HSet(context.Background(),
+			fmt.Sprintf("document:%d", docId), "json_data", jsonData).Err()
+		if err != nil {
+			return res, err
+		}
+
+		res.IsFile = false
+		res.JSON = jsonData
+
+		return res, nil
+	}
+
+	var file []byte
+	getFileQuery := fmt.Sprintf("SELECT file_data FROM %s WHERE metadata_id=$1", filesTable)
+	err = r.db.Get(&file, getFileQuery, docId)
+	if err != nil {
+		return res, err
+	}
+
+	var mime string
+	getMimeQuery := fmt.Sprintf("SELECT mime FROM %s WHERE id=$1", metadataTable)
+	err = r.db.Get(&mime, getMimeQuery, docId)
+	if err != nil {
+		return res, err
+	}
+
+	res.IsFile = true
+	res.File = file
+	res.MimeType = mime
+
+	return res, nil
 }

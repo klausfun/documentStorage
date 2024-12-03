@@ -21,6 +21,10 @@ func (s *DocumentService) Create(meta models.GetDocsResp,
 	return s.repo.Create(meta, fileData, jsonData)
 }
 
-func (s *DocumentService) GetListOfDocs(userId int, docInput models.GetDocsInput) ([]models.GetDocsResp, error) {
-	return s.repo.GetListOfDocs(userId, docInput)
+func (s *DocumentService) GetList(userId int, docInput models.GetDocsInput) ([]models.GetDocsResp, error) {
+	return s.repo.GetList(userId, docInput)
+}
+
+func (s *DocumentService) GetById(docId int) (models.GetDoc, error) {
+	return s.repo.GetById(docId)
 }

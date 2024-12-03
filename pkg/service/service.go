@@ -14,7 +14,8 @@ type Authorization interface {
 
 type Document interface {
 	Create(meta models.GetDocsResp, fileData []byte, jsonData string) error
-	GetListOfDocs(userId int, docInput models.GetDocsInput) ([]models.GetDocsResp, error)
+	GetList(userId int, docInput models.GetDocsInput) ([]models.GetDocsResp, error)
+	GetById(docId int) (models.GetDoc, error)
 }
 
 type Service struct {
