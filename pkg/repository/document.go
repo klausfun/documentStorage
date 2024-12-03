@@ -199,3 +199,10 @@ func (r *DocumentPostgres) GetById(docId int) (models.GetDoc, error) {
 
 	return res, nil
 }
+
+func (r *DocumentPostgres) Delete(docId int) error {
+	query := fmt.Sprintf("DELETE FROM %s WHERE id = $1", metadataTable)
+	_, err := r.db.Exec(query, docId)
+
+	return err
+}

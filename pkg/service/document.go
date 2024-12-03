@@ -28,3 +28,7 @@ func (s *DocumentService) GetList(userId int, docInput models.GetDocsInput) ([]m
 func (s *DocumentService) GetById(docId int) (models.GetDoc, error) {
 	return s.repo.GetById(docId)
 }
+
+func (s *DocumentService) Delete(docId int) error {
+	return s.repo.Delete(docId)
+}

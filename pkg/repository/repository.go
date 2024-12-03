@@ -17,6 +17,7 @@ type Document interface {
 	Create(meta models.GetDocsResp, fileData []byte, jsonData string) error
 	GetList(userId int, docInput models.GetDocsInput) ([]models.GetDocsResp, error)
 	GetById(docId int) (models.GetDoc, error)
+	Delete(docId int) error
 }
 
 type Repository struct {

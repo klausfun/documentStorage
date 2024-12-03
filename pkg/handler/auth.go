@@ -124,7 +124,7 @@ func (h *Handler) signOut(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, responseModel{
-		Response: map[string]interface{}{
+		Response: map[string]bool{
 			fmt.Sprint(token): true,
 		},
 	})

@@ -5,6 +5,7 @@ import (
 	"documentStorage/pkg"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
@@ -231,5 +232,46 @@ func (h *Handler) getDocumentById(c *gin.Context) {
 }
 
 func (h *Handler) deleteDocument(c *gin.Context) {
+	var input TokenInput
+	if err := c.BindJSON(&input); err != nil {
+		newErrResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
 
+	token := input.Token
+	if err := h.userIdentity(c, token); err != nil {
+		var errResp *pkg.ErrorResponse
+		if errors.As(err, &errResp) {
+			newErrResponse(c, errResp.Code, errResp.Text)
+			return
+		}
+
+		newErrResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	docIdStr := c.Param("id")
+	docId, err := strconv.Atoi(docIdStr)
+	if err != nil {
+		newErrResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = h.services.Document.Delete(docId)
+	if err != nil {
+		var errResp *pkg.ErrorResponse
+		if errors.As(err, &errResp) {
+			newErrResponse(c, errResp.Code, errResp.Text)
+			return
+		}
+
+		newErrResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, responseModel{
+		Response: map[string]bool{
+			fmt.Sprint(docId): true,
+		},
+	})
 }
