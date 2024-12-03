@@ -5,6 +5,8 @@ import (
 	"documentStorage/pkg/repository"
 )
 
+//go:generate mockgen -source=service.go -destination=mocks/mock.go
+
 type Authorization interface {
 	CreateUser(user models.User) (string, error)
 	GenerateToken(login, password string) (string, error)
