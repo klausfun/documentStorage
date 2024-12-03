@@ -35,3 +35,10 @@ CREATE TABLE users_metadata
     user_id     int references users (id) on delete cascade    not null,
     metadata_id int references metadata (id) on delete cascade not null
 );
+
+CREATE INDEX idx_metadata_name ON metadata (name);
+CREATE INDEX idx_users_login ON users (login);
+CREATE INDEX idx_users_metadata_metadata_id ON users_metadata (metadata_id);
+CREATE INDEX idx_users_metadata_user_id ON users_metadata (user_id);
+CREATE INDEX idx_json_document_metadata_id ON json_document (metadata_id);
+CREATE INDEX idx_files_metadata_id ON files (metadata_id);

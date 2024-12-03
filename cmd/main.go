@@ -7,10 +7,27 @@ import (
 	"documentStorage/pkg/service"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"net/http"
 	"os"
 )
+
+var (
+	requestCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Total number of HTTP requests",
+		},
+		[]string{"method"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(requestCount)
+}
 
 func main() {
 	logrus.SetFormatter(new(logrus.JSONFormatter))
@@ -49,6 +66,13 @@ func main() {
 	repos := repository.NewRepository(db, redisClient)
 	services := service.NewService(repos)
 	handlers := handler.NewHandler(services)
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		if err := http.ListenAndServe(":8081", nil); err != nil {
+			logrus.Fatalf("failed to start metrics server: %s", err.Error())
+		}
+	}()
 
 	srv := new(documentStorage.Server)
 	if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
